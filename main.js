@@ -6,7 +6,7 @@ require("dotenv").config();
 
 const NUM_CONTEXT_POSTS = 20;
 const NUM_POSTS_TO_GENERATE = 20;
-const TIME_BETWEEN_POSTS = 10; // minutes
+const TIME_BETWEEN_POSTS = 10;
 
 async function authenticate() {
   const API = new SidechatAPIClient();
