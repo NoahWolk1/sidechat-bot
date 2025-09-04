@@ -35,7 +35,7 @@ try {
 
 async function authenticate() {
   const API = new SidechatAPIClient();
-  const phoneNumber = process.env.PHONE_NUMBER;
+  const phoneNumber = process.env.PHONE_NUMBER_VERIFY;
 
   await API.loginViaSMS(phoneNumber);
   console.log("SMS sent.");
