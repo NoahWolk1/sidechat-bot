@@ -50,7 +50,7 @@ async function main() {
   const user = await API.getCurrentUser();
   console.log("User ID: " + user.id);
 
-  const groupId = user.memberships[1].groupId;
+  const groupId = process.env.GROUP_ID;
   console.log("Group ID: " + groupId);
 
   const ai = new GoogleGenAI({
