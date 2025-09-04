@@ -7,7 +7,7 @@
     { "src": "/(.*)", "dest": "/" }
   ],
   "env": {
-    "PHONE_NUMBER": "@phone_number",
+    "PHONE": "@phone",
     "GROUP_ID": "@group_id",
     "GEMINI_API_KEY": "@gemini_api_key"
   }
