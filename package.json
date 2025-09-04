@@ -4,15 +4,23 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@google/genai": "^1.17.0",
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "next": "^15.5.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "sidechat.js": "^2.6.4"
   }
 }
