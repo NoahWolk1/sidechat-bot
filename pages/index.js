@@ -1,40 +1,31 @@
 import Head from 'next/head';
 import BotControl from '../components/BotControl';
 import SidechatLogo from '../components/SidechatLogo';
+import styles from '../styles/Home.module.css';
 
 export default function Home() {
   return (
-    <div className="container">
+    <div className={styles.container}>
       <Head>
         <title>Sidechat Bot Controller</title>
         <meta name="description" content="Control panel for Sidechat bot" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className="header">
+      <header className={styles.header}>
         <SidechatLogo />
         <h1>Sidechat Bot Controller</h1>
-        <p>Configure and control your <span className="brand-text">Sidechat</span> posting bot</p>
+        <p>Configure and control your <span className={styles.brandText}>Sidechat</span> posting bot</p>
       </header>
 
-      <main>
+      <main className={styles.main}>
         <BotControl />
       </main>
 
-      <footer className="footer">
-        <div className="footer-divider"></div>
-        <p>&copy; {new Date().getFullYear()} <span className="brand-text">Sidechat</span> Bot • Made with 💜</p>
+      <footer className={styles.footer}>
+        <div className={styles.footerDivider}></div>
+        <p>&copy; {new Date().getFullYear()} <span className={styles.brandText}>Sidechat</span> Bot • Made with 💜</p>
       </footer>
-      
-      <style jsx>{`
-        .footer-divider {
-          width: 50px;
-          height: 4px;
-          background: linear-gradient(to right, var(--primary-purple), var(--light-purple));
-          margin: 0 auto 1rem auto;
-          border-radius: 2px;
-        }
-      `}</style>
     </div>
   );
 }

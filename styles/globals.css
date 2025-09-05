@@ -5,6 +5,7 @@
   --very-light-purple: #EDE7F6;
   --background-color: #f8f5ff;
   --text-color: #333333;
+  --text-secondary: #666666;
   --accent-color: #FF4081;
   --success-color: #4CAF50;
   --danger-color: #F44336;
@@ -27,28 +28,11 @@ body {
   min-height: 100vh;
 }
 
-.container {
+.app-wrapper {
   max-width: 900px;
   margin: 0 auto;
   padding: 2rem;
   min-height: 100vh;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  position: relative;
-}
-
-.header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 25%;
-  right: 25%;
-  height: 3px;
-  background: linear-gradient(to right, transparent, var(--primary-purple), transparent);
 }
 
 .header h1 {

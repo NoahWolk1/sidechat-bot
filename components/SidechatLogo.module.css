@@ -1,0 +1,10 @@
+.logoContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.logo {
+  filter: drop-shadow(0px 5px 10px rgba(94, 53, 177, 0.3));
+}

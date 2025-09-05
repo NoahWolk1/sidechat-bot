@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import styles from './BotControl.module.css';
 
 export default function BotControl() {
   const [postType, setPostType] = useState('scarecrow');
@@ -94,8 +95,8 @@ export default function BotControl() {
   };
 
   return (
-    <div className="card">
-      <h2>
+    <div className={styles.botControl}>
+      <h2 className={styles.title}>
         <svg 
           width="24" 
           height="24" 
@@ -114,12 +115,12 @@ export default function BotControl() {
         Bot Control Panel
       </h2>
       
-      <div className="form-group">
+      <div className={styles.formGroup}>
         <label htmlFor="postType">Post Type</label>
         <input
           type="text"
           id="postType"
-          className="form-control"
+          className={styles.formControl}
           value={postType}
           onChange={(e) => setPostType(e.target.value)}
           placeholder="e.g., scarecrow, dad jokes, etc."
@@ -127,13 +128,13 @@ export default function BotControl() {
         />
       </div>
       
-      <div className="time-group">
-        <div className="form-group">
+      <div className={styles.timeGroup}>
+        <div className={styles.formGroup}>
           <label htmlFor="delayMin">Min Delay (minutes)</label>
           <input
             type="number"
             id="delayMin"
-            className="form-control"
+            className={styles.formControl}
             value={delayMin}
             onChange={(e) => setDelayMin(parseInt(e.target.value))}
             min="1"
@@ -141,12 +142,12 @@ export default function BotControl() {
           />
         </div>
         
-        <div className="form-group">
+        <div className={styles.formGroup}>
           <label htmlFor="delayMax">Max Delay (minutes)</label>
           <input
             type="number"
             id="delayMax"
-            className="form-control"
+            className={styles.formControl}
             value={delayMax}
             onChange={(e) => setDelayMax(parseInt(e.target.value))}
             min={delayMin}
@@ -155,25 +156,25 @@ export default function BotControl() {
         </div>
       </div>
       
-      <div className="time-group">
-        <div className="form-group">
+      <div className={styles.timeGroup}>
+        <div className={styles.formGroup}>
           <label htmlFor="startTime">Start Time (optional)</label>
           <input
             type="datetime-local"
             id="startTime"
-            className="form-control"
+            className={styles.formControl}
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
             disabled={status.running}
           />
         </div>
         
-        <div className="form-group">
+        <div className={styles.formGroup}>
           <label htmlFor="stopTime">Stop Time (optional)</label>
           <input
             type="datetime-local"
             id="stopTime"
-            className="form-control"
+            className={styles.formControl}
             value={stopTime}
             onChange={(e) => setStopTime(e.target.value)}
             disabled={status.running}
@@ -181,9 +182,9 @@ export default function BotControl() {
         </div>
       </div>
       
-      <div className="button-group">
+      <div className={styles.buttonGroup}>
         <button
-          className="button button-primary"
+          className={`${styles.button} ${styles.buttonPrimary}`}
           onClick={startBot}
           disabled={status.running}
         >
@@ -204,7 +205,7 @@ export default function BotControl() {
         </button>
         
         <button
-          className="button button-danger"
+          className={`${styles.button} ${styles.buttonDanger}`}
           onClick={stopBot}
           disabled={!status.running}
         >
@@ -225,7 +226,7 @@ export default function BotControl() {
         </button>
       </div>
       
-      <div className={`status ${status.running ? 'running' : (statusMessage.includes('stopped') ? 'stopped' : 'idle')}`}>
+      <div className={`${styles.status} ${status.running ? styles.running : (statusMessage.includes('stopped') ? styles.stopped : styles.idle)}`}>
         <svg 
           width="18" 
           height="18" 
