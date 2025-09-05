@@ -3,8 +3,31 @@ import { getBotState, updateBotState } from '../../lib/botState';
 import { SidechatAPIClient } from 'sidechat.js';
 import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
+import path from 'path';
+
+// Initialize bot state file if it doesn't exist
+const initializeBotState = () => {
+  const stateFile = path.join(process.cwd(), 'bot-state.json');
+  if (!fs.existsSync(stateFile)) {
+    try {
+      fs.writeFileSync(stateFile, JSON.stringify({
+        running: false,
+        startTime: null,
+        stopTime: null,
+        postType: null,
+        delayRange: null,
+        lastRun: null,
+      }, null, 2));
+      console.log('Bot state file initialized in webhook');
+    } catch (error) {
+      console.error('Failed to initialize bot state file in webhook:', error);
+    }
+  }
+};
 
 export default async function handler(req, res) {
+  // Ensure state file exists
+  initializeBotState();
   // Optional: Add some basic security with a simple token
   const authToken = req.headers['x-webhook-token'];
   if (process.env.WEBHOOK_TOKEN && authToken !== process.env.WEBHOOK_TOKEN) {

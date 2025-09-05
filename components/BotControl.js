@@ -7,7 +7,15 @@ export default function BotControl() {
   const [delayMax, setDelayMax] = useState(15);
   const [startTime, setStartTime] = useState('');
   const [stopTime, setStopTime] = useState('');
-  const [status, setStatus] = useState({ running: false });
+  // Initialize with safe default values to prevent null property access
+  const [status, setStatus] = useState({ 
+    running: false,
+    startTime: null,
+    stopTime: null,
+    postType: null,
+    delayRange: null,
+    lastRun: null,
+  });
   const [statusMessage, setStatusMessage] = useState('Bot is idle');
 
   useEffect(() => {
@@ -34,16 +42,24 @@ export default function BotControl() {
       
       const data = await response.json();
       
-      if (data.success) {
-        setStatus(data.status);
-        if (data.status.running) {
-          setStatusMessage(`Bot is running with post type: ${data.status.postType}`);
+      if (data.success && data.status) {
+        // Ensure we have a valid status object with running property
+        const safeStatus = {
+          running: false,
+          ...data.status
+        };
+        setStatus(safeStatus);
+        
+        if (safeStatus.running) {
+          setStatusMessage(`Bot is running with post type: ${safeStatus.postType || 'unknown'}`);
         } else {
           setStatusMessage('Bot is idle');
         }
       } else {
-        console.error('Status API returned success: false', data);
+        console.error('Status API returned success: false or missing status', data);
         setStatusMessage('Error fetching bot status');
+        // Set a safe default status
+        setStatus({ running: false });
       }
     } catch (error) {
       console.error('Error fetching bot status:', error);
@@ -251,7 +267,7 @@ export default function BotControl() {
         </button>
       </div>
       
-      <div className={`${styles.status} ${status.running ? styles.running : (statusMessage.includes('stopped') ? styles.stopped : styles.idle)}`}>
+      <div className={`${styles.status} ${status && status.running ? styles.running : (statusMessage && statusMessage.includes('stopped') ? styles.stopped : styles.idle)}`}>
         <svg 
           width="18" 
           height="18" 
@@ -263,12 +279,12 @@ export default function BotControl() {
           strokeLinejoin="round"
           style={{ marginRight: '10px', verticalAlign: 'text-bottom' }}
         >
-          {status.running ? 
+          {status && status.running ? 
             <><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></> : 
             <><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4l3 3"></path></>
           }
         </svg>
-        {statusMessage}
+        {statusMessage || 'Loading status...'}
       </div>
     </div>
   );
