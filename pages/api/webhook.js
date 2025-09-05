@@ -1,33 +1,10 @@
-// Webhook for running the bot (can be triggered by an external cron service)
-import { getBotState, updateBotState } from '../../lib/botState';
+// Webhook for running the bot (can be triggered by an external cron service or Vercel Cron)
+import { getBotState, updateBotState, getBotConfig, logBotActivity } from '../../lib/firebaseDB';
 import { SidechatAPIClient } from 'sidechat.js';
 import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
-import path from 'path';
-
-// Initialize bot state file if it doesn't exist
-const initializeBotState = () => {
-  const stateFile = path.join(process.cwd(), 'bot-state.json');
-  if (!fs.existsSync(stateFile)) {
-    try {
-      fs.writeFileSync(stateFile, JSON.stringify({
-        running: false,
-        startTime: null,
-        stopTime: null,
-        postType: null,
-        delayRange: null,
-        lastRun: null,
-      }, null, 2));
-      console.log('Bot state file initialized in webhook');
-    } catch (error) {
-      console.error('Failed to initialize bot state file in webhook:', error);
-    }
-  }
-};
 
 export default async function handler(req, res) {
-  // Ensure state file exists
-  initializeBotState();
   // Optional: Add some basic security with a simple token
   const authToken = req.headers['x-webhook-token'];
   if (process.env.WEBHOOK_TOKEN && authToken !== process.env.WEBHOOK_TOKEN) {
@@ -35,8 +12,8 @@ export default async function handler(req, res) {
   }
   
   try {
-    // Get current bot state
-    const botState = getBotState();
+    // Get current bot state from Firebase
+    const botState = await getBotState();
     
     // If bot is not supposed to be running, exit early
     if (!botState.running) {
@@ -47,6 +24,12 @@ export default async function handler(req, res) {
     if (botState.startTime) {
       const startTime = new Date(botState.startTime);
       if (startTime > new Date()) {
+        await logBotActivity({
+          type: 'waiting_for_start',
+          message: 'Waiting for scheduled start time',
+          nextRunAt: startTime
+        });
+        
         return res.status(200).json({ 
           success: true, 
           message: 'Waiting for scheduled start time', 
@@ -60,9 +43,15 @@ export default async function handler(req, res) {
       const stopTime = new Date(botState.stopTime);
       if (stopTime < new Date()) {
         // Stop the bot if we've reached the stop time
-        const updatedState = updateBotState({
+        const updatedState = await updateBotState({
           running: false,
           stopTime: new Date().toISOString(),
+        });
+        
+        await logBotActivity({
+          type: 'auto_stopped',
+          message: 'Bot stopped due to scheduled stop time',
+          stopTime: new Date().toISOString()
         });
         
         return res.status(200).json({ 
@@ -74,11 +63,9 @@ export default async function handler(req, res) {
       }
     }
     
-    // Load bot config
-    let config;
-    try {
-      config = JSON.parse(fs.readFileSync('./bot-config.json', 'utf8'));
-    } catch (error) {
+    // Load bot config from Firebase
+    const config = await getBotConfig();
+    if (!config) {
       return res.status(500).json({ success: false, message: 'Failed to load bot configuration' });
     }
     
@@ -89,15 +76,37 @@ export default async function handler(req, res) {
         phoneNumber: process.env.PHONE_NUMBER
       });
       
-      // Load token
-      const tokenData = JSON.parse(fs.readFileSync('./token.json', 'utf8'));
+      // Load token - in production environment, this should be stored securely
+      // Either in Firebase or as an environment variable
+      let tokenData;
+      try {
+        // First try to read from file if available (local dev environment)
+        tokenData = JSON.parse(fs.readFileSync('./token.json', 'utf8'));
+      } catch (error) {
+        // If file doesn't exist, try to use environment variable
+        if (process.env.SIDECHAT_TOKEN) {
+          tokenData = { token: process.env.SIDECHAT_TOKEN };
+        } else {
+          throw new Error('No Sidechat token available');
+        }
+      }
+      
       client.token = tokenData.token;
       
-      // Run the bot task (this would be a simplified version of your bot.js logic)
-      // In a production environment, you would implement the actual posting logic here
+      // Run the bot task - this would execute the actual posting logic
+      // This is a simplified version that logs activity but doesn't actually post
+      // In production, implement your full posting logic here
+      
+      await logBotActivity({
+        type: 'task_executed',
+        message: `Bot executed with post type: ${config.postType}`,
+        postType: config.postType,
+        delayMin: config.delayMin,
+        delayMax: config.delayMax
+      });
       
       // Update the last run time
-      updateBotState({
+      await updateBotState({
         lastRun: new Date().toISOString()
       });
       

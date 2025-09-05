@@ -221,6 +221,44 @@
   animation: pulse 2s infinite;
 }
 
+.botDetails {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(158, 158, 158, 0.3);
+  font-size: 0.9rem;
+  color: #757575;
+}
+
+.detailItem {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.detailItem strong {
+  margin-right: 0.5rem;
+  min-width: 100px;
+  display: inline-block;
+  color: #5E35B1;
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: #5E35B1;
+  font-weight: 500;
+  font-size: 1.2rem;
+}
+
+.error {
+  background-color: rgba(244, 67, 54, 0.1);
+  padding: 1.5rem;
+  border-radius: 8px;
+  color: #d32f2f;
+  margin-bottom: 1rem;
+  border-left: 4px solid #d32f2f;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .timeGroup {

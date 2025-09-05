@@ -1,5 +1,24 @@
 import { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import firebaseConfig from '../lib/firebaseConfig';
 import styles from './BotControl.module.css';
+
+// Initialize Firebase on client side
+let app;
+let db;
+
+// Initialize Firebase when in browser environment
+if (typeof window !== 'undefined') {
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+  } catch (error) {
+    if (!/already exists/.test(error.message)) {
+      console.error("Firebase initialization error", error);
+    }
+  }
+}
 
 export default function BotControl() {
   const [postType, setPostType] = useState('scarecrow');
@@ -15,14 +34,57 @@ export default function BotControl() {
     postType: null,
     delayRange: null,
     lastRun: null,
+    updatedAt: null,
   });
   const [statusMessage, setStatusMessage] = useState('Bot is idle');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check bot status on component mount
-    fetchStatus();
+    if (typeof window === 'undefined' || !db) {
+      // Fallback to API if Firebase not available
+      fetchStatus();
+      return;
+    }
+    
+    // Set up real-time listener to the bot state in Firebase
+    const unsubscribe = onSnapshot(
+      doc(db, "bot", "state"),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const botState = docSnap.data();
+          setStatus(botState);
+          
+          if (botState.running) {
+            setStatusMessage(`Bot is running with post type: ${botState.postType || 'unknown'}`);
+            
+            // Set form values from current state
+            if (botState.postType) setPostType(botState.postType);
+            if (botState.delayRange) {
+              setDelayMin(botState.delayRange.min);
+              setDelayMax(botState.delayRange.max);
+            }
+          } else {
+            setStatusMessage('Bot is idle');
+          }
+        } else {
+          setStatusMessage('No bot state found');
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error getting bot state:", error);
+        setStatusMessage('Error fetching bot status');
+        setError(error.message);
+        setLoading(false);
+      }
+    );
+    
+    // Clean up the listener when the component unmounts
+    return () => unsubscribe();
   }, []);
 
+  // Fallback method if Firebase is not available
   const fetchStatus = async () => {
     try {
       const response = await fetch('/api/bot', {
@@ -55,15 +117,18 @@ export default function BotControl() {
         } else {
           setStatusMessage('Bot is idle');
         }
+        setLoading(false);
       } else {
         console.error('Status API returned success: false or missing status', data);
         setStatusMessage('Error fetching bot status');
         // Set a safe default status
         setStatus({ running: false });
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error fetching bot status:', error);
       setStatusMessage('Error connecting to server');
+      setLoading(false);
     }
   };
 
@@ -92,12 +157,11 @@ export default function BotControl() {
       
       const data = await response.json();
       
-      if (data.success) {
-        setStatus(data.status);
-        setStatusMessage(`Bot started with post type: ${postType}`);
-      } else {
+      if (!data.success) {
         setStatusMessage(`Failed to start: ${data.message}`);
       }
+      // No need to setStatus here as the Firebase listener will update it
+      
     } catch (error) {
       console.error('Error starting bot:', error);
       setStatusMessage(`Error: ${error.message}`);
@@ -123,17 +187,52 @@ export default function BotControl() {
       
       const data = await response.json();
       
-      if (data.success) {
-        setStatus(data.status);
-        setStatusMessage('Bot has been stopped');
-      } else {
+      if (!data.success) {
         setStatusMessage(`Failed to stop: ${data.message}`);
       }
+      // No need to setStatus here as the Firebase listener will update it
+      
     } catch (error) {
       console.error('Error stopping bot:', error);
       setStatusMessage(`Error: ${error.message}`);
     }
   };
+  
+  // Format timestamp to readable format
+  const formatTime = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString();
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.botControl}>
+        <div className={styles.loading}>Loading bot status...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.botControl}>
+        <div className={styles.error}>
+          Error connecting to bot: {error}
+          <button 
+            className={`${styles.button} ${styles.buttonPrimary}`}
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.botControl}>
@@ -149,11 +248,12 @@ export default function BotControl() {
           strokeLinejoin="round"
           style={{ marginRight: '8px', verticalAlign: 'bottom' }}
         >
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="9" y1="9" x2="9" y2="15"></line>
-          <line x1="15" y1="9" x2="15" y2="15"></line>
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+          <line x1="6" y1="6" x2="6.01" y2="6"></line>
+          <line x1="6" y1="18" x2="6.01" y2="18"></line>
         </svg>
-        Bot Control Panel
+        Bot Control
       </h2>
       
       <div className={styles.formGroup}>
@@ -286,6 +386,19 @@ export default function BotControl() {
         </svg>
         {statusMessage || 'Loading status...'}
       </div>
+      
+      {status && (
+        <div className={styles.botDetails}>
+          <div className={styles.detailItem}>
+            <strong>Last Updated:</strong> {formatTime(status.updatedAt)}
+          </div>
+          {status.lastRun && (
+            <div className={styles.detailItem}>
+              <strong>Last Run:</strong> {formatTime(status.lastRun)}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
