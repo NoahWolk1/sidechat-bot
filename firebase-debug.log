@@ -1,0 +1,21 @@
+[debug] [2025-09-05T03:31:54.138Z] ----------------------------------------------------------------------
+[debug] [2025-09-05T03:31:54.139Z] Command:       /opt/homebrew/Cellar/node/24.4.1/bin/node /opt/homebrew/bin/firebase init
+[debug] [2025-09-05T03:31:54.139Z] CLI Version:   14.15.2
+[debug] [2025-09-05T03:31:54.139Z] Platform:      darwin
+[debug] [2025-09-05T03:31:54.139Z] Node Version:  v24.4.1
+[debug] [2025-09-05T03:31:54.139Z] Time:          Thu Sep 04 2025 22:31:54 GMT-0500 (Central Daylight Time)
+[debug] [2025-09-05T03:31:54.139Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-09-05T03:31:54.142Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-09-05T03:31:54.142Z] > authorizing via signed-in user (noahjw23@icloud.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/noahwolk/sidechat-bot-1
+
