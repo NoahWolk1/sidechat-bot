@@ -25,6 +25,13 @@ export default function BotControl() {
         body: JSON.stringify({ action: 'status' }),
       });
       
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Status API returned ${response.status}: ${errorText}`);
+        setStatusMessage('Error fetching bot status');
+        return;
+      }
+      
       const data = await response.json();
       
       if (data.success) {
@@ -34,14 +41,20 @@ export default function BotControl() {
         } else {
           setStatusMessage('Bot is idle');
         }
+      } else {
+        console.error('Status API returned success: false', data);
+        setStatusMessage('Error fetching bot status');
       }
     } catch (error) {
       console.error('Error fetching bot status:', error);
+      setStatusMessage('Error connecting to server');
     }
   };
 
   const startBot = async () => {
     try {
+      setStatusMessage('Starting bot...');
+      
       const response = await fetch('/api/bot', {
         method: 'POST',
         headers: {
@@ -55,6 +68,11 @@ export default function BotControl() {
           stopTime: stopTime || null,
         }),
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API returned ${response.status}: ${errorText}`);
+      }
       
       const data = await response.json();
       
@@ -72,6 +90,8 @@ export default function BotControl() {
 
   const stopBot = async () => {
     try {
+      setStatusMessage('Stopping bot...');
+      
       const response = await fetch('/api/bot', {
         method: 'POST',
         headers: {
@@ -79,6 +99,11 @@ export default function BotControl() {
         },
         body: JSON.stringify({ action: 'stop' }),
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API returned ${response.status}: ${errorText}`);
+      }
       
       const data = await response.json();
       
