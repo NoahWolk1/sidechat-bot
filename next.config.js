@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   reactStrictMode: true,
   // Configure image optimization
@@ -11,8 +13,8 @@ const nextConfig = {
     // Enables styled-components compatibility
     styledComponents: true,
   },
-  // Configure output directory - 'standalone' for minimal serverless
-  output: 'standalone',
+  // Fix for workspace root warning
+  outputFileTracingRoot: path.join(__dirname),
 }
 
 module.exports = nextConfig
