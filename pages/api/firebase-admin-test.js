@@ -6,20 +6,33 @@ function initFirebaseAdmin() {
   if (!admin.apps.length) {
     // Initialize using environment variables
     try {
+      console.log('Initializing Firebase Admin SDK...');
+      
       // Check if using direct JSON or environment variables
       let credential;
       
       if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
         // Use JSON string from environment variable
+        console.log('Using FIREBASE_SERVICE_ACCOUNT_JSON for authentication');
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
         credential = admin.credential.cert(serviceAccount);
       } else {
         // Use individual environment variables
-        credential = admin.credential.cert({
+        console.log('Using individual environment variables for authentication');
+        const certConfig = {
           projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'sidechat-bot-host',
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
           privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+        };
+        
+        console.log('Cert config:', {
+          projectId: certConfig.projectId,
+          hasClientEmail: !!certConfig.clientEmail,
+          hasPrivateKey: !!certConfig.privateKey,
+          privateKeyLength: certConfig.privateKey ? certConfig.privateKey.length : 0
         });
+        
+        credential = admin.credential.cert(certConfig);
       }
       
       admin.initializeApp({
@@ -30,6 +43,7 @@ function initFirebaseAdmin() {
       return true;
     } catch (error) {
       console.error('Firebase Admin initialization error:', error);
+      console.error('Error stack:', error.stack);
       return false;
     }
   }

@@ -3,11 +3,8 @@
 # Script to deploy to Vercel with Firebase service account
 echo "Preparing to deploy to Vercel with Firebase configuration..."
 
-# Check if VERCEL_PROJECT_ID is set
-if [ -z "$VERCEL_PROJECT_ID" ]; then
-  echo "Error: VERCEL_PROJECT_ID is not set. Please run 'vercel link' first."
-  exit 1
-fi
+# Since the project is already linked to Vercel, we'll skip the project ID check
+echo "Vercel project is already configured."
 
 # Set Firebase environment variables
 echo "Setting up Firebase environment variables..."

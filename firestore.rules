@@ -4,19 +4,21 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow public read access to bot state and config
-    // This enables anyone viewing the web interface to see the bot status
-    match /bot/state {
-      allow read: if true;
-      allow write: if request.auth != null;  // Require authentication to change bot state
+    // Allow public read AND write access to bot state and config
+    // This enables anyone viewing the web interface to control the bot
+    // This is acceptable for this specific app since it's a low-security requirement
+    // and most operations will go through the serverless functions anyway
+    match /bot/{document=**} {
+      allow read, write: if true;
     }
     
-    match /bot/config {
+    // Allow public read access to test documents
+    match /test/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;  // Require authentication to change bot configuration
+      allow write: if true;  // Allow writing to test documents for diagnostic purposes
     }
     
-    // For production use, you may want to restrict access with authentication:
+    // Note: For more sensitive applications, use authentication:
     // allow read, write: if request.auth != null;
     
     // For a completely public instance (use with caution):

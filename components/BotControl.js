@@ -43,50 +43,102 @@ export default function BotControl() {
   useEffect(() => {
     if (typeof window === 'undefined' || !db) {
       // Fallback to API if Firebase not available
+      console.log('Firebase not available in client, falling back to API');
       fetchStatus();
       return;
     }
     
-    // Set up real-time listener to the bot state in Firebase
-    const unsubscribe = onSnapshot(
-      doc(db, "bot", "state"),
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const botState = docSnap.data();
-          setStatus(botState);
-          
-          if (botState.running) {
-            setStatusMessage(`Bot is running with post type: ${botState.postType || 'unknown'}`);
+    // Set up real-time listener with error handling
+    try {
+      console.log('Setting up Firebase real-time listener');
+    
+      // Set up real-time listener to the bot state in Firebase
+      const unsubscribe = onSnapshot(
+        doc(db, "bot", "state"),
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const botState = docSnap.data();
+            setStatus(botState);
             
-            // Set form values from current state
-            if (botState.postType) setPostType(botState.postType);
-            if (botState.delayRange) {
-              setDelayMin(botState.delayRange.min);
-              setDelayMax(botState.delayRange.max);
+            if (botState.running) {
+              setStatusMessage(`Bot is running with post type: ${botState.postType || 'unknown'}`);
+              
+              // Set form values from current state
+              if (botState.postType) setPostType(botState.postType);
+              if (botState.delayRange) {
+                setDelayMin(botState.delayRange.min);
+                setDelayMax(botState.delayRange.max);
+              }
+            } else {
+              setStatusMessage('Bot is idle');
             }
           } else {
-            setStatusMessage('Bot is idle');
+            setStatusMessage('No bot state found');
           }
-        } else {
-          setStatusMessage('No bot state found');
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Error getting bot state:", error);
+          setStatusMessage('Error fetching bot status');
+          setError(error.message);
+          setLoading(false);
+          
+          // Fallback to API on error
+          fetchStatus();
         }
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Error getting bot state:", error);
-        setStatusMessage('Error fetching bot status');
-        setError(error.message);
-        setLoading(false);
-      }
-    );
-    
-    // Clean up the listener when the component unmounts
-    return () => unsubscribe();
+      );
+      
+      // Clean up the listener when the component unmounts
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Firebase listener setup error:", error);
+      setStatusMessage('Error setting up Firebase listener');
+      setError(error.message);
+      setLoading(false);
+      
+      // Fallback to API
+      fetchStatus();
+      
+      // Return empty cleanup function
+      return () => {};
+    }
   }, []);
 
   // Fallback method if Firebase is not available
   const fetchStatus = async () => {
     try {
+      console.log('Fetching bot status via API endpoint');
+      
+      // Try the new Firebase Admin API first
+      const adminResponse = await fetch('/api/firebase-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          action: 'get',
+          data: {
+            collection: 'bot',
+            document: 'state'
+          }
+        }),
+      });
+      
+      if (adminResponse.ok) {
+        const adminData = await adminResponse.json();
+        if (adminData.success && adminData.data) {
+          console.log('Got bot state from Firebase Admin API:', adminData.data);
+          setStatus(adminData.data);
+          setStatusMessage(adminData.data.running ? 
+            `Bot is running with post type: ${adminData.data.postType || 'unknown'}` : 
+            'Bot is idle');
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Fall back to the old bot API endpoint
+      console.log('Firebase Admin API failed, trying legacy API endpoint');
       const response = await fetch('/api/bot', {
         method: 'POST',
         headers: {
@@ -136,6 +188,44 @@ export default function BotControl() {
     try {
       setStatusMessage('Starting bot...');
       
+      // Prepare bot configuration
+      const botConfig = {
+        postType,
+        delayRange: { min: delayMin, max: delayMax },
+        startTime: startTime || null,
+        stopTime: stopTime || null,
+        running: true,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Try to update via Firebase Admin API first
+      const adminResponse = await fetch('/api/firebase-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          data: {
+            collection: 'bot',
+            document: 'state',
+            value: botConfig
+          }
+        }),
+      });
+      
+      // If the Admin API succeeds, we're done
+      if (adminResponse.ok) {
+        const adminData = await adminResponse.json();
+        if (adminData.success) {
+          setStatusMessage('Bot started successfully via Admin API');
+          setStatus({...status, ...botConfig}); // Update local state
+          return;
+        }
+      }
+      
+      // Fallback to the traditional API
+      console.log('Firebase Admin API failed, trying legacy API endpoint');
       const response = await fetch('/api/bot', {
         method: 'POST',
         headers: {
@@ -159,8 +249,9 @@ export default function BotControl() {
       
       if (!data.success) {
         setStatusMessage(`Failed to start: ${data.message}`);
+      } else {
+        setStatusMessage('Bot started successfully');
       }
-      // No need to setStatus here as the Firebase listener will update it
       
     } catch (error) {
       console.error('Error starting bot:', error);
@@ -172,6 +263,41 @@ export default function BotControl() {
     try {
       setStatusMessage('Stopping bot...');
       
+      // Prepare updated bot state
+      const botUpdate = {
+        running: false,
+        stopTime: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Try to update via Firebase Admin API first
+      const adminResponse = await fetch('/api/firebase-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update',
+          data: {
+            collection: 'bot',
+            document: 'state',
+            value: botUpdate
+          }
+        }),
+      });
+      
+      // If the Admin API succeeds, we're done
+      if (adminResponse.ok) {
+        const adminData = await adminResponse.json();
+        if (adminData.success) {
+          setStatusMessage('Bot stopped successfully via Admin API');
+          setStatus({...status, ...botUpdate}); // Update local state
+          return;
+        }
+      }
+      
+      // Fallback to the traditional API
+      console.log('Firebase Admin API failed, trying legacy API endpoint');
       const response = await fetch('/api/bot', {
         method: 'POST',
         headers: {
@@ -189,8 +315,9 @@ export default function BotControl() {
       
       if (!data.success) {
         setStatusMessage(`Failed to stop: ${data.message}`);
+      } else {
+        setStatusMessage('Bot stopped successfully');
       }
-      // No need to setStatus here as the Firebase listener will update it
       
     } catch (error) {
       console.error('Error stopping bot:', error);
