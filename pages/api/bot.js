@@ -2,13 +2,21 @@
 import { getBotState, updateBotState, createBotConfig } from '../../lib/firebaseDB';
 
 export default async function handler(req, res) {
+  console.log('API route /api/bot called with method:', req.method);
+  
   if (req.method === 'POST') {
     try {
       const { action, postType, delayRange, startTime, stopTime } = req.body;
+      console.log('Request body:', { action, postType, delayRange, startTime, stopTime });
+      
+      console.log('Getting bot state from Firebase...');
       const currentState = await getBotState();
+      console.log('Current bot state:', currentState);
       
       if (action === 'start') {
+        console.log('Starting bot...');
         if (currentState.running) {
+          console.log('Bot is already running, returning 400');
           return res.status(400).json({ success: false, message: 'Bot is already running' });
         }
 
@@ -20,21 +28,35 @@ export default async function handler(req, res) {
           startTime: startTime || null,
           stopTime: stopTime || null,
         };
-
-        // Save config to Firebase
-        await createBotConfig(config);
-
-        // Update bot state in Firebase
-        const updatedState = await updateBotState({
-          running: true,
-          startTime: new Date().toISOString(),
-          stopTime: stopTime || null,
-          postType,
-          delayRange,
-          lastRun: new Date().toISOString(),
-        });
-
-        return res.status(200).json({ success: true, message: 'Bot started', status: updatedState });
+        
+        console.log('Creating bot config:', config);
+        
+        try {
+          // Save config to Firebase
+          await createBotConfig(config);
+          console.log('Bot config saved to Firebase');
+          
+          // Update bot state in Firebase
+          console.log('Updating bot state in Firebase...');
+          const updatedState = await updateBotState({
+            running: true,
+            startTime: new Date().toISOString(),
+            stopTime: stopTime || null,
+            postType,
+            delayRange,
+            lastRun: new Date().toISOString(),
+          });
+          console.log('Bot state updated:', updatedState);
+          
+          return res.status(200).json({ success: true, message: 'Bot started', status: updatedState });
+        } catch (dbError) {
+          console.error('Firebase operation failed:', dbError);
+          return res.status(500).json({ 
+            success: false, 
+            message: 'Database operation failed', 
+            error: dbError.message 
+          });
+        }
       } 
       else if (action === 'stop') {
         if (!currentState.running) {

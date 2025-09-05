@@ -5,18 +5,30 @@ import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 
 export default async function handler(req, res) {
+  console.log('Webhook triggered at:', new Date().toISOString());
+  
   // Optional: Add some basic security with a simple token
   const authToken = req.headers['x-webhook-token'];
+  console.log('Authentication check:', { 
+    hasWebhookToken: !!process.env.WEBHOOK_TOKEN,
+    authTokenProvided: !!authToken,
+    tokenMatch: authToken === process.env.WEBHOOK_TOKEN 
+  });
+  
   if (process.env.WEBHOOK_TOKEN && authToken !== process.env.WEBHOOK_TOKEN) {
+    console.log('Unauthorized webhook access attempt');
     return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
   
   try {
+    console.log('Getting bot state from Firebase...');
     // Get current bot state from Firebase
     const botState = await getBotState();
+    console.log('Bot state retrieved:', botState);
     
     // If bot is not supposed to be running, exit early
     if (!botState.running) {
+      console.log('Bot is not active, exiting webhook');
       return res.status(200).json({ success: true, message: 'Bot is not active', ran: false });
     }
     
